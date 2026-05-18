@@ -1,0 +1,14 @@
+
+name: Ejercicio 1
+on:
+  push:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Imprimir mensaje personalizado
+        run: echo "¡Hola! Este es un mensaje personalizado desde el workflow."
+      - name: Listar contenido del repositorio
+        run: |
+          git clone "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" repo
+          ls -la repo
