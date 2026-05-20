@@ -61,6 +61,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ inputs.node-version }}
+          cache: npm
           cache-dependency-path: ${{ format('{0}/{1}', inputs.working-directory, inputs.cache-dependency-path) }}
 
       - name: Cache npm downloads
@@ -83,13 +84,13 @@ jobs:
 
       - name: Install dependencies
         run: |
-          ${{ inputs.install-command }} 2>&1 | tee logs/install.log
+          eval "${{ inputs.install-command }}" 2>&1 | tee logs/install.log
 
       - name: Run tests
         id: tests
         continue-on-error: true
         run: |
-          ${{ inputs.test-command }} 2>&1 | tee logs/test.log
+          eval "${{ inputs.test-command }}" 2>&1 | tee logs/test.log
 
       - name: Write test summary
         if: always()
@@ -103,7 +104,7 @@ jobs:
         if: steps.tests.outcome == 'success'
         continue-on-error: true
         run: |
-          ${{ inputs.build-command }} 2>&1 | tee logs/build.log
+          eval "${{ inputs.build-command }}" 2>&1 | tee logs/build.log
 
       - name: Write run summary
         if: always()
