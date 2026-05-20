@@ -13,7 +13,7 @@ jobs:
     uses: ./.github/workflows/reusable-node-pipeline.yml
     with:
       node-version: '18'
-      working-directory: .
+      working-directory: workflow2
       install-command: npm ci
       test-command: npm test
       build-command: npm run build
@@ -25,7 +25,7 @@ jobs:
     uses: ./.github/workflows/reusable-node-pipeline.yml
     with:
       node-version: '20'
-      working-directory: .
+      working-directory: workflow2
       install-command: npm ci
       test-command: npm test
       build-command: npm run build
