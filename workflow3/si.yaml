@@ -1,0 +1,155 @@
+name: Laboratorio 3 - Matrix build enterprise
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+# Cancela ejecuciones viejas de la misma rama para evitar pipelines obsoletos.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Matrix ${{ matrix.os }} / Node ${{ matrix.node-version }} / ${{ matrix.build-mode }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      # Falla rápido cuando una combinación crítica rompe la validación.
+      fail-fast: true
+      max-parallel: 4
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+        node-version:
+          - '18'
+          - '20'
+        build-mode:
+          - debug
+          - release
+        exclude:
+          # Windows se valida en debug para reducir combinaciones redundantes.
+          - os: windows-latest
+            build-mode: release
+          # Release solo se valida en Node 20 para representar la ruta de producción.
+          - node-version: '18'
+            build-mode: release
+        include:
+          # Añade una configuración especial de producción sin crear jobs manuales.
+          - os: ubuntu-latest
+            node-version: '20'
+            build-mode: release
+            node-env: production
+            release-channel: production
+            special-config: hardened-production
+            estimated-minutes: 18
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Resolve execution environment
+        # El entorno efectivo también nace de la matrix y se guarda para los pasos posteriores.
+        run: |
+          if [[ -n "${{ matrix.node-env }}" ]]; then
+            echo "NODE_ENV=${{ matrix.node-env }}" >> "$GITHUB_ENV"
+          elif [[ "${{ matrix.build-mode }}" == 'release' ]]; then
+            echo "NODE_ENV=production" >> "$GITHUB_ENV"
+          else
+            echo "NODE_ENV=development" >> "$GITHUB_ENV"
+          fi
+
+          echo "RELEASE_CHANNEL=${{ matrix.release-channel || 'standard' }}" >> "$GITHUB_ENV"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Capture matrix metadata
+        id: metadata
+        run: |
+          estimated_minutes="${{ matrix.estimated-minutes || (matrix.build-mode == 'release' && 15 || 8) }}"
+          special_config="${{ matrix.special-config || 'standard' }}"
+          matrix_label="${{ matrix.os }} / Node ${{ matrix.node-version }} / ${{ matrix.build-mode }}"
+
+          echo "estimated-minutes=$estimated_minutes" >> "$GITHUB_OUTPUT"
+          echo "special-config=$special_config" >> "$GITHUB_OUTPUT"
+          echo "matrix-label=$matrix_label" >> "$GITHUB_OUTPUT"
+
+      - name: Run tests
+        id: tests
+        continue-on-error: true
+        run: npm test
+
+      - name: Run build
+        id: build
+        if: steps.tests.outcome == 'success'
+        continue-on-error: true
+        run: npm run build
+
+      - name: Write job summary
+        if: always()
+        env:
+          MATRIX_JSON: ${{ toJson(matrix) }}
+        run: |
+          overall_result="success"
+          if [[ "${{ steps.tests.outcome }}" != 'success' ]]; then
+            overall_result="failure"
+          fi
+
+          if [[ "${{ steps.build.outcome || 'skipped' }}" != 'success' ]]; then
+            if [[ "${{ steps.tests.outcome }}" == 'success' ]]; then
+              overall_result="failure"
+            fi
+          fi
+
+          {
+            echo "## Matrix job summary"
+            echo ""
+            echo "| Campo | Valor |"
+            echo "| --- | --- |"
+            echo "| Configuración ejecutada | ${{ steps.metadata.outputs.matrix-label }} |"
+            echo "| Resultado | $overall_result |"
+            echo "| Resultado tests | ${{ steps.tests.outcome }} |"
+            echo "| Resultado build | ${{ steps.build.outcome || 'skipped' }} |"
+            echo "| Tiempo estimado | ${{ steps.metadata.outputs.estimated-minutes }} min |"
+            echo "| Matrix info | ${{ steps.metadata.outputs.special-config }} |"
+            echo "| Node env | $NODE_ENV |"
+            echo "| Release channel | $RELEASE_CHANNEL |"
+            echo ""
+            echo "### Matrix JSON"
+            echo '```json'
+            printf '%s\n' "$MATRIX_JSON"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Enforce job result
+        # El summary se escribe antes, pero el job sigue fallando si algo no pasó.
+        if: always()
+        run: |
+          if [[ "${{ steps.tests.outcome }}" != 'success' ]]; then
+            exit 1
+          fi
+
+          if [[ "${{ steps.build.outcome }}" != 'success' ]]; then
+            exit 1
+          fi
