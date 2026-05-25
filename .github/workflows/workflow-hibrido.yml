@@ -1,0 +1,66 @@
+name: Pipeline Híbrido - Laboratorio 5
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  # Job 1: Ejecutado en GitHub-Hosted runner
+  build-hosted:
+    name: Build & Code Quality (GitHub-Hosted)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js (Simulación de dependencias)
+        uses: actions/setup-node@v4
+        with:
+          node-size: '20'
+
+      - name: Simular Build y Tests
+        run: |
+          echo "==== Iniciando construcción en Hosted Runner ===="
+          echo "Ejecutando en: Ubuntu Hosted Runner"
+          echo "Construyendo la aplicación..."
+          echo "Aplicación construida con éxito."
+          echo "Ejecutando pruebas unitarias..."
+          echo "Pruebas unitarias pasadas."
+
+  # Job 2: Ejecutado en el Self-Hosted runner local
+  deploy-local:
+    name: Deploy & Local Verify (Self-Hosted Windows)
+    needs: build-hosted
+    runs-on: [self-hosted, windows, local-runner]
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Verificar Entorno Local
+        shell: powershell
+        run: |
+          Write-Host "==== Despliegue en Runner Self-Hosted Local ===="
+          Write-Host "Nombre del Host: $env:COMPUTERNAME"
+          Write-Host "Directorio de Trabajo del Runner: $pwd"
+          Write-Host "Usuario de Ejecución: $env:USERNAME"
+          
+      - name: Simular Despliegue en IIS o Carpeta Local
+        shell: powershell
+        run: |
+          Write-Host "Simulando despliegue de artefactos..."
+          $deployDir = Join-Path -Path $pwd -ChildPath "dist"
+          if (-not (Test-Path $deployDir)) {
+              New-Item -ItemType Directory -Path $deployDir | Out-Null
+          }
+          Set-Content -Path (Join-Path $deployDir "index.html") -Value "<h1>Desplegado en Self-Hosted Local</h1>"
+          Write-Host "Despliegue finalizado exitosamente en $deployDir"
+          
+      - name: Pruebas de Diagnóstico del Sistema
+        shell: powershell
+        run: |
+          Write-Host "Verificando estado de red local..."
+          Test-Connection -ComputerName localhost -Count 2
+          Write-Host "Diagnósticos locales completados con éxito."

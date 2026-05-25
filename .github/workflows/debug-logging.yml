@@ -1,0 +1,55 @@
+name: Diagnóstico y Logging Detallado - Laboratorio 5
+
+on:
+  workflow_dispatch: # Permite ejecución manual para diagnóstico
+
+env:
+  # Activar depuración detallada a nivel del workflow (también puede hacerse vía secretos del repositorio)
+  ACTIONS_RUNNER_DEBUG: 'true'
+  ACTIONS_STEP_DEBUG: 'true'
+
+jobs:
+  debug-runner:
+    name: Extraer Contexto y Logs del Runner
+    runs-on: [self-hosted, windows, local-runner]
+    steps:
+      - name: Checkout Código
+        uses: actions/checkout@v4
+
+      - name: Mostrar Información Detallada del Runner
+        shell: powershell
+        run: |
+          Write-Host "--- INFORMACIÓN DEL RUNNER ---"
+          Write-Host "Versión del OS: $((Get-WmiObject Win32_OperatingSystem).Caption)"
+          Write-Host "Arquitectura: $env:PROCESSOR_ARCHITECTURE"
+          Write-Host "Directorio del Agente: $env:RUNNER_WORKSPACE"
+          Write-Host "Ruta Temporal: $env:RUNNER_TEMP"
+          Write-Host "Ruta Tool Cache: $env:RUNNER_TOOL_CACHE"
+
+      - name: Mostrar Contexto del Workflow (Debugging)
+        shell: powershell
+        run: |
+          Write-Host "--- CONTEXTO DE GITHUB ACTIONS ---"
+          Write-Host "Repositorio: ${{ github.repository }}"
+          Write-Host "Actor (Iniciador): ${{ github.actor }}"
+          Write-Host "Evento: ${{ github.event_name }}"
+          Write-Host "ID Ejecución: ${{ github.run_id }}"
+          Write-Host "Número de Ejecución: ${{ github.run_number }}"
+
+      - name: Simular Análisis de Red y Resolución de Nombres (Troubleshooting)
+        shell: powershell
+        run: |
+          Write-Host "--- COMPROBACIÓN DE CONECTIVIDAD ---"
+          Write-Host "Probando resolución DNS de github.com..."
+          Resolve-DnsName -Name github.com -ErrorAction SilentlyContinue
+          
+          Write-Host "Probando ping a github.com..."
+          Test-Connection -ComputerName github.com -Count 2 -ErrorAction SilentlyContinue
+
+          Write-Host "Comprobando conexión HTTPS a la API de GitHub..."
+          try {
+              $response = Invoke-WebRequest -Uri "https://api.github.com" -UseBasicParsing -TimeoutSec 5
+              Write-Host "API GitHub accesible. Código HTTP: $($response.StatusCode)" -ForegroundColor Green
+          } catch {
+              Write-Host "Fallo al conectar con la API de GitHub: $_" -ForegroundColor Red
+          }
