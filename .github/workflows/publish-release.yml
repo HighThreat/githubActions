@@ -1,0 +1,58 @@
+name: Publish & Update Major Tag
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+# Allow the action to write to repository contents (to push tags)
+permissions:
+  contents: write
+
+jobs:
+  publish-release:
+    name: Auto Update Major Tag
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Extract the tag name and determine the major version
+      # For example: refs/tags/v1.4.2 -> tag is v1.4.2, major is v1
+      - name: Calculate Version Info
+        id: version_info
+        run: |
+          TAG_NAME="${GITHUB_REF#refs/tags/}"
+          echo "Tag name: $TAG_NAME"
+          
+          # Extract the major version prefix (everything before the first dot)
+          MAJOR_VERSION=$(echo "$TAG_NAME" | cut -d. -f1)
+          echo "Major version: $MAJOR_VERSION"
+          
+          # Export to environment for next steps
+          echo "TAG=$TAG_NAME" >> $GITHUB_ENV
+          echo "MAJOR=$MAJOR_VERSION" >> $GITHUB_ENV
+
+      # Update the major floating tag (e.g. v1) to point to the current commit
+      - name: Update Floating Major Version Tag
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          echo "Updating floating tag '${{ env.MAJOR }}' to point to '${{ env.TAG }}'..."
+          
+          # Delete local major tag if it exists
+          git tag -d ${{ env.MAJOR }} || true
+          
+          # Delete remote major tag to avoid push conflicts
+          git push origin :refs/tags/${{ env.MAJOR }} || true
+          
+          # Create major tag pointing to the current commit (which is the new release tag)
+          git tag ${{ env.MAJOR }}
+          
+          # Push new major tag to remote
+          git push origin ${{ env.MAJOR }}
+          
+          echo "Floating tag '${{ env.MAJOR }}' has been successfully updated and pushed!"

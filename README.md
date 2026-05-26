@@ -99,3 +99,19 @@ En `production`, activa required reviewers para forzar aprobación manual antes 
 - Exponer secretos en logs los hace recuperables por cualquiera con acceso al run.
 - Actions externas con referencias flotantes como `@main` pueden cambiar sin aviso.
 - Permisos excesivos amplían el impacto de cualquier paso comprometido.
+
+---
+
+## 3. Laboratorio 6 — Desarrollo de una custom action
+
+Este laboratorio implementa una Custom Action de JavaScript nativa (Node.js 20) sin dependencias externas para validar y normalizar los nombres de las ramas de Git y generar tags compatibles con Docker y Git.
+
+### Estructura del Proyecto (Laboratorio 6)
+
+*   **[`lab6/action.yml`](file:///lab6/action.yml):** Metadatos, inputs y outputs de la custom action.
+*   **[`lab6/index.js`](file:///lab6/index.js):** Lógica nativa de validación, categorización y normalización en Node.js 20 (cero dependencias).
+*   **[`lab6/test-local.js`](file:///lab6/test-local.js):** Script para simular localmente múltiples escenarios de inputs, outputs y control de errores.
+*   **[`.github/workflows/test-action.yml`](file:///.github/workflows/test-action.yml):** Workflow que consume la custom action localmente (`uses: ./lab6`) y verifica sus outputs de forma condicional.
+*   **[`.github/workflows/publish-release.yml`](file:///.github/workflows/publish-release.yml):** Workflow que automatiza el versionado flotante (ej: actualizar `v1` al crear una tag `v1.x.x`).
+*   **[`lab6/README.md`](file:///lab6/README.md):** Documentación completa sobre los parámetros de configuración, salidas y ejemplos prácticos.
+

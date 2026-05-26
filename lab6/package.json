@@ -1,0 +1,19 @@
+{
+  "name": "branch-tag-normalizer-action",
+  "version": "1.0.0",
+  "description": "GitHub Custom Action to validate and normalize branch names for Git tags and Docker images.",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test-local.js"
+  },
+  "keywords": [
+    "github-actions",
+    "branch",
+    "tag",
+    "validation",
+    "normalization",
+    "docker"
+  ],
+  "author": "Antigravity",
+  "license": "MIT"
+}

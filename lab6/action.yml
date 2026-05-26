@@ -1,0 +1,34 @@
+name: 'Branch & Tag Normalizer'
+description: 'Validates branch naming conventions, categorizes branches, and generates normalized tags safe for Docker and Git.'
+author: 'Antigravity'
+branding:
+  icon: 'tag'
+  color: 'purple'
+inputs:
+  branch-name:
+    description: 'The branch name or full Git reference to validate and normalize (e.g. refs/heads/feature/login).'
+    required: true
+  allowed-prefixes:
+    description: 'Comma-separated list of allowed prefixes or exact branch names. If empty, all branch names are accepted.'
+    required: false
+    default: 'feature/,bugfix/,hotfix/,release/,main,master,develop'
+  max-length:
+    description: 'Maximum length of the normalized tag.'
+    required: false
+    default: '50'
+  fail-on-invalid:
+    description: 'Fail the workflow step if the branch name is invalid.'
+    required: false
+    default: 'true'
+outputs:
+  is-valid:
+    description: 'Whether the branch name meets the validation rules (true/false).'
+  normalized-tag:
+    description: 'A safe, lowercase, normalized version of the branch name.'
+  branch-type:
+    description: 'The category of the branch (e.g., feature, bugfix, hotfix, release, main, unknown).'
+  validation-message:
+    description: 'A human-readable explanation of the validation result.'
+runs:
+  using: 'node20'
+  main: 'index.js'
