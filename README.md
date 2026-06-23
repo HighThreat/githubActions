@@ -1,12 +1,10 @@
-# Repositorio de Prácticas de GitHub Actions
+# Leo GitHub Actions Labs
 
-Este repositorio contiene los laboratorios y ejercicios prácticos de GitHub Actions.
+Colección de implementaciones avanzadas y simulaciones de infraestructura de CI/CD orientadas al troubleshooting y administración de *Self-hosted runners*.
 
----
+## 🚀 Entornos de Pruebas y Diagnóstico
 
-## 1. Laboratorio 5 — Self-hosted runners y troubleshooting (Actual)
-
-Este laboratorio demuestra la configuración y resolución de problemas en runners self-hosted (locales).
+Este proyecto demuestra conocimientos técnicos en la configuración, aislamiento y resolución de problemas (troubleshooting) en entornos híbridos de **GitHub Actions**.
 
 ### Estructura del Proyecto (Laboratorio 5)
 
